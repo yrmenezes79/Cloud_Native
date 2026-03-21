@@ -1,0 +1,31 @@
+services:
+  # Servidor Web
+  web:
+    image: nginx:alpine
+    container_name: web_server
+    ports:
+      - "8080:80"
+    networks:
+      - rede_aula
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+    depends_on:
+      - cache
+# Banco de Dados em Memória (Redis)
+  cache:
+    image: redis:alpine
+    container_name: redis_db
+    networks:
+      - rede_aula
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 64M
+
+networks:
+  rede_aula:
+    driver: bridge
