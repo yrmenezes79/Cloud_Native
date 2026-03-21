@@ -1,0 +1,35 @@
+services:
+  proxy_web:
+    image: nginx:alpine
+    container_name: proxy_web
+    ports:
+      - "80:80"
+    networks:
+      - rede_frontend
+
+  app_admin:
+    image: adminer:latest
+    container_name: app_admin
+    depends_on:
+      - db_producao
+    networks:
+      - rede_frontend
+      - rede_backend
+db_producao:
+    image: postgres:15-alpine
+    container_name: db_producao
+    environment:
+      POSTGRES_PASSWORD: aula123
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - rede_backend
+
+networks:
+  rede_frontend:
+    driver: bridge
+  rede_backend:
+    driver: bridge
+
+volumes:
+  pgdata:
