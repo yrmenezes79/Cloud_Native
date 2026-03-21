@@ -1,0 +1,36 @@
+# Define argumento para versão da aplicação
+ARG APP_VERSION=1.0
+
+# Imagem base
+FROM python:3.11
+
+# Define variáveis de ambiente
+ENV PORT=5000
+ENV APP_ENV=production
+
+# Define shell padrão
+SHELL ["/bin/bash", "-c"]
+
+# Define diretório de trabalho
+WORKDIR /app
+# Copia arquivos da aplicação
+COPY requirements.txt .
+COPY app.py .
+
+# Instala dependências
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Cria volume para persistência de dados
+VOLUME ["/app/data"]
+
+# Cria usuário não-root
+RUN useradd -ms /bin/bash mack
+
+# Define usuário
+USER mack
+
+# Expõe porta da aplicação
+EXPOSE 5000
+
+# Comando executado ao iniciar o container
+CMD ["python", "app.py"]
