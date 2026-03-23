@@ -1,13 +1,17 @@
-- name: Setup completo do servidor com Kubernetes
+- name: Setup completo com Docker, Minikube e Kubernetes
   hosts: localhost
   become: yes
 
   vars:
-    usuario: yuri
+    usuario: mack
 
   tasks:
 
-    - name: Criar usuário
+    # -------------------------
+    # USUÁRIO E SUDO
+    # -------------------------
+
+    - name: Criar usuário yuri
       user:
         name: "{{ usuario }}"
         shell: /bin/bash
@@ -15,14 +19,18 @@
         append: yes
         create_home: yes
 
-    - name: Garantir acesso sudo sem senha
+    - name: Garantir sudo sem senha
       copy:
         dest: "/etc/sudoers.d/{{ usuario }}"
         content: "{{ usuario }} ALL=(ALL) NOPASSWD:ALL"
         mode: '0440'
         validate: 'visudo -cf %s'
 
-    - name: Atualizar lista de pacotes
+    # -------------------------
+    # PACOTES BASE
+    # -------------------------
+
+    - name: Atualizar cache do apt
       apt:
         update_cache: yes
 
@@ -41,7 +49,7 @@
         groups: docker
         append: yes
 
-    - name: Garantir que o Docker está ativo
+    - name: Garantir Docker ativo
       service:
         name: docker
         state: started
@@ -94,18 +102,27 @@
         creates: /usr/local/bin/kubectl
 
     # -------------------------
-    # INICIAR MINIKUBE
+    # INICIAR MINIKUBE (COM USUÁRIO YURI)
     # -------------------------
 
     - name: Iniciar cluster Minikube com Docker
+      become: yes
       become_user: "{{ usuario }}"
-      shell: minikube start --driver=docker
+      become_method: sudo
+      shell: |
+        bash -lc "minikube start --driver=docker"
+      environment:
+        HOME: "/home/{{ usuario }}"
       args:
         creates: "/home/{{ usuario }}/.minikube"
 
     - name: Habilitar metrics-server
+      become: yes
       become_user: "{{ usuario }}"
-      shell: minikube addons enable metrics-server
+      shell: |
+        bash -lc "minikube addons enable metrics-server"
+      environment:
+        HOME: "/home/{{ usuario }}"
 
     # -------------------------
     # DASHBOARD
@@ -117,10 +134,11 @@
         mode: '0755'
         content: |
           #!/bin/bash
+          export HOME=/home/{{ usuario }}
           minikube dashboard --url --port=8080 &
           kubectl proxy --address='0.0.0.0' --disable-filter=true
 
-    - name: Ajustar dono do script
+    - name: Ajustar permissões do script
       file:
         path: /home/{{ usuario }}/start_dashboard.sh
         owner: "{{ usuario }}"
