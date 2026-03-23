@@ -1,5 +1,5 @@
 - name: Setup completo do servidor com Kubernetes
-  hosts: all
+  hosts: localhost
   become: yes
 
   vars:
