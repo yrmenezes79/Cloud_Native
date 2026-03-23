@@ -1,0 +1,48 @@
+- name: Setup inicial do servidor
+  hosts: all
+  become: yes
+
+  vars:
+    usuario: yuri
+
+  tasks:
+
+    - name: Criar usuário
+      user:
+        name: "{{ usuario }}"
+        shell: /bin/bash
+        groups: sudo
+        append: yes
+        create_home: yes
+
+    - name: Garantir acesso sudo sem senha
+      copy:
+        dest: "/etc/sudoers.d/{{ usuario }}"
+        content: "{{ usuario }} ALL=(ALL) NOPASSWD:ALL"
+        mode: '0440'
+        validate: 'visudo -cf %s'
+
+    - name: Atualizar lista de pacotes
+      apt:
+        update_cache: yes
+
+    - name: Instalar pacotes necessários
+      apt:
+        name:
+          - docker.io
+          - curl
+          - git
+          - net-tools
+        state: present
+
+    - name: Adicionar usuário ao grupo docker
+      user:
+        name: "{{ usuario }}"
+        groups: docker
+        append: yes
+
+    - name: Garantir que o Docker está ativo
+      service:
+        name: docker
+        state: started
+        enabled: yes
