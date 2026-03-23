@@ -1,5 +1,5 @@
-- name: Setup completo do servidor
-  hosts: localhost
+- name: Setup completo do servidor com Kubernetes
+  hosts: all
   become: yes
 
   vars:
@@ -48,7 +48,7 @@
         enabled: yes
 
     # -------------------------
-    # INSTALAÇÃO DO MINIKUBE
+    # MINIKUBE
     # -------------------------
 
     - name: Baixar Minikube
@@ -63,7 +63,7 @@
         creates: /usr/local/bin/minikube
 
     # -------------------------
-    # INSTALAÇÃO DO KUBECTL
+    # KUBECTL
     # -------------------------
 
     - name: Obter versão estável do kubectl
@@ -92,3 +92,36 @@
       command: install -o root -g root -m 0755 /tmp/kubectl /usr/local/bin/kubectl
       args:
         creates: /usr/local/bin/kubectl
+
+    # -------------------------
+    # INICIAR MINIKUBE
+    # -------------------------
+
+    - name: Iniciar cluster Minikube com Docker
+      become_user: "{{ usuario }}"
+      shell: minikube start --driver=docker
+      args:
+        creates: "/home/{{ usuario }}/.minikube"
+
+    - name: Habilitar metrics-server
+      become_user: "{{ usuario }}"
+      shell: minikube addons enable metrics-server
+
+    # -------------------------
+    # DASHBOARD
+    # -------------------------
+
+    - name: Criar script para subir dashboard
+      copy:
+        dest: /home/{{ usuario }}/start_dashboard.sh
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          minikube dashboard --url --port=8080 &
+          kubectl proxy --address='0.0.0.0' --disable-filter=true
+
+    - name: Ajustar dono do script
+      file:
+        path: /home/{{ usuario }}/start_dashboard.sh
+        owner: "{{ usuario }}"
+        group: "{{ usuario }}"
