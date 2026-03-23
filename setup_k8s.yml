@@ -1,5 +1,5 @@
-- name: Setup inicial do servidor
-  hosts: all
+- name: Setup completo do servidor
+  hosts: localhost
   become: yes
 
   vars:
@@ -46,3 +46,49 @@
         name: docker
         state: started
         enabled: yes
+
+    # -------------------------
+    # INSTALAÇÃO DO MINIKUBE
+    # -------------------------
+
+    - name: Baixar Minikube
+      get_url:
+        url: https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+        dest: /tmp/minikube
+        mode: '0755'
+
+    - name: Instalar Minikube
+      command: install /tmp/minikube /usr/local/bin/minikube
+      args:
+        creates: /usr/local/bin/minikube
+
+    # -------------------------
+    # INSTALAÇÃO DO KUBECTL
+    # -------------------------
+
+    - name: Obter versão estável do kubectl
+      shell: curl -L -s https://dl.k8s.io/release/stable.txt
+      register: kubectl_version
+
+    - name: Baixar kubectl
+      get_url:
+        url: "https://dl.k8s.io/release/{{ kubectl_version.stdout }}/bin/linux/amd64/kubectl"
+        dest: /tmp/kubectl
+        mode: '0755'
+
+    - name: Baixar checksum do kubectl
+      get_url:
+        url: "https://dl.k8s.io/release/{{ kubectl_version.stdout }}/bin/linux/amd64/kubectl.sha256"
+        dest: /tmp/kubectl.sha256
+
+    - name: Validar checksum do kubectl
+      shell: |
+        echo "$(cat /tmp/kubectl.sha256)  /tmp/kubectl" | sha256sum --check
+      register: checksum_result
+      changed_when: false
+      failed_when: "'OK' not in checksum_result.stdout"
+
+    - name: Instalar kubectl
+      command: install -o root -g root -m 0755 /tmp/kubectl /usr/local/bin/kubectl
+      args:
+        creates: /usr/local/bin/kubectl
