@@ -1,0 +1,43 @@
+# 1. Define a versão da API que estamos usando
+apiVersion: apps/v1
+
+# 2. Define o tipo de objeto. O Deployment gerencia o ciclo de vida dos Pods
+kind: Deployment
+
+# 3. Metadados do próprio Deployment
+metadata:
+  name: apache-deployment   # Nome que aparecerá no 'kubectl get deployments'
+  labels:
+    app: meu-servidor       # Etiqueta para organizar seus recursos
+
+# 4. Especificação de como o Deployment deve se comportar
+spec:
+  replicas: 3               # Quantidade de cópias (Pods) que queremos rodando
+  
+  # 5. O Seletor diz ao Deployment quais Pods ele deve "tomar conta"
+  selector:
+    matchLabels:
+      app: web-apache       # Ele vai gerenciar qualquer Pod que tenha essa label
+
+  # 6. O Template é o "molde" do Pod que será criado
+  template:
+    metadata:
+      labels:
+        app: web-apache     # ESSA label deve ser igual ao matchLabels acima
+    
+    # 7. Especificação técnica dos containers dentro do Pod
+    spec:
+      containers:
+      - name: apache-container
+        image: httpd:2.4    # Imagem oficial do Apache no Docker Hub
+        ports:
+        - containerPort: 80 # A porta que a aplicação escuta dentro do container
+        
+        # 8. Boas práticas: Limites de recursos para o container
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
