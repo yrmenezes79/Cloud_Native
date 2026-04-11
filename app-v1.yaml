@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-exercicio
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      aula: pos-graduacao
+  template:
+    metadata:
+      labels:
+        aula: pos-graduacao
+    spec:
+      containers:
+      - name: container-app
+        image: hashicorp/http-echo:latest
+        args:
+          - "-text=Versao 1.0 - Sistema Estavel"
+        ports:
+        - containerPort: 5678
